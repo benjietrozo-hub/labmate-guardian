@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 04, 2025 at 09:03 AM
+-- Generation Time: Dec 05, 2025 at 10:56 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -87,6 +87,13 @@ CREATE TABLE `inventory_equipment` (
   `created_by` char(36) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `inventory_equipment`
+--
+
+INSERT INTO `inventory_equipment` (`id`, `date`, `name`, `category`, `item_description`, `serial_number`, `quantity`, `purpose`, `signature`, `date_returned`, `condition`, `created_at`, `created_by`) VALUES
+('0d4a42440675472c37ee6ee5b46e0a5c', '2025-12-05', 'Admin', 'Computer', 'New', '12345', 25, '', NULL, '0000-00-00', 'Excellent', '2025-12-05 17:17:57', '6717');
+
 -- --------------------------------------------------------
 
 --
@@ -133,11 +140,21 @@ CREATE TABLE `repair_maintenance` (
 --
 
 CREATE TABLE `users` (
-  `id` char(32) NOT NULL,
+  `id` int(11) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `role` enum('admin','user') NOT NULL DEFAULT 'user',
+  `avatar_url` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `email`, `password_hash`, `role`, `avatar_url`, `created_at`) VALUES
+(76, 'jay@gmail.com', '$2y$10$QehqpqH4z3EVv/7sxvTis.OrEqV7xB4wg1ehNWjkTy7XbWUCNpuKq', 'user', 'api/uploads/avatars/76.jpg', '2025-12-04 17:18:15'),
+(6717, 'benjie.trozo@csucc.edu.ph', '$2y$10$CMMaW/gtubTZ9O3lLYZDo.dvBkLFXYW01A7lCfKro.SoTq6SB8IQq', 'admin', 'api/uploads/avatars/6717.jpg', '2025-12-04 16:11:16');
 
 -- --------------------------------------------------------
 
@@ -203,6 +220,16 @@ ALTER TABLE `users`
 --
 ALTER TABLE `visitor_logs`
   ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6718;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -8,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import NavHeader from "@/components/NavHeader";
+import NotificationProfile from "@/components/NotificationProfile";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 const IncidentReports = () => {
   const navigate = useNavigate();
@@ -15,6 +18,14 @@ const IncidentReports = () => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<any>(null);
+  
+  const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  
+  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+    currentUser?.id || "",
+    currentUser?.role || ""
+  );
   const [formData, setFormData] = useState({
     article: "",
     description: "",
@@ -171,35 +182,29 @@ const IncidentReports = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="px-3 py-1 rounded border text-sm hover:bg-muted"
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="px-3 py-1 rounded border text-sm hover:bg-muted"
-          >
-            Home
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Incident Reports</h1>
-            <p className="text-muted-foreground">Track equipment issues and incidents</p>
-          </div>
-        </div>
-        <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Report
-            </Button>
-          </DialogTrigger>
+    <div>
+      <NavHeader 
+        title="Incident Reports" 
+        subtitle="Track and manage equipment incidents"
+        showBackButton={true}
+        showHomeButton={true}
+      >
+        <NotificationProfile 
+          notifications={notifications}
+          unreadCount={unreadCount}
+          currentUser={currentUser}
+          markAllAsRead={markAllAsRead}
+        />
+      </NavHeader>
+      <div className="space-y-6 p-6">
+        <div className="flex justify-end">
+          <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Report
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingReport ? "Edit" : "Create"} Incident Report</DialogTitle>
@@ -391,6 +396,7 @@ const IncidentReports = () => {
             )}
           </TableBody>
         </Table>
+      </div>
       </div>
     </div>
   );

@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, CheckCircle } from "lucide-react";
+import NavHeader from "@/components/NavHeader";
+import NotificationProfile from "@/components/NotificationProfile";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 const RepairMaintenance = () => {
   const navigate = useNavigate();
@@ -16,6 +19,14 @@ const RepairMaintenance = () => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingRepair, setEditingRepair] = useState<any>(null);
+  
+  const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  
+  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+    currentUser?.id || "",
+    currentUser?.role || ""
+  );
   const [formData, setFormData] = useState({
     date: "",
     equipment_name: "",
@@ -184,41 +195,87 @@ const RepairMaintenance = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="px-3 py-1 rounded border text-sm hover:bg-muted"
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="px-3 py-1 rounded border text-sm hover:bg-muted"
-          >
-            Home
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Repair & Maintenance</h1>
-            <p className="text-muted-foreground">Track repair requests and status</p>
-          </div>
-        </div>
-        <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              New Repair
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingRepair ? "Edit" : "New"} Repair Record</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+    <div>
+      <NavHeader 
+        title="Repair & Maintenance" 
+        subtitle="Track and manage equipment repairs"
+        showBackButton={true}
+        showHomeButton={true}
+      >
+        <NotificationProfile 
+          notifications={notifications}
+          unreadCount={unreadCount}
+          currentUser={currentUser}
+          markAllAsRead={markAllAsRead}
+        />
+      </NavHeader>
+      <div className="space-y-6 p-6">
+        <div className="flex justify-end">
+          <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                New Repair
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editingRepair ? "Edit" : "New"} Repair Record</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Date *</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="equipment_name">Equipment Name *</Label>
+                    <Input
+                      id="equipment_name"
+                      value={formData.equipment_name}
+                      onChange={(e) => setFormData({ ...formData, equipment_name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="serial_number">Serial Number</Label>
+                    <Input
+                      id="serial_number"
+                      value={formData.serial_number}
+                      onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="issue_description">Issue Description *</Label>
+                    <Textarea
+                      id="issue_description"
+                      value={formData.issue_description}
+                      onChange={(e) => setFormData({ ...formData, issue_description: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="action_taken">Action Taken</Label>
+                    <Textarea
+                      id="action_taken"
+                      value={formData.action_taken}
+                      onChange={(e) => setFormData({ ...formData, action_taken: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="technician_name">Technician Name</Label>
+                    <Input
+                      id="technician_name"
+                      value={formData.technician_name}
+                      onChange={(e) => setFormData({ ...formData, technician_name: e.target.value })}
+                    />
+                  </div>
                 <div className="space-y-2">
                   <Label htmlFor="date">Date *</Label>
                   <Input
@@ -357,6 +414,7 @@ const RepairMaintenance = () => {
             )}
           </TableBody>
         </Table>
+      </div>
       </div>
     </div>
   );

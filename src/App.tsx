@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AuthGuard } from "@/components/AuthGuard";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { useMaintenanceMode } from "@/hooks/useMaintenanceMode";
+import AdminRoute from "@/components/AdminRoute";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +31,17 @@ import RepairMaintenance from "./pages/RepairMaintenance";
 import Users from "./pages/Users";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import SystemSettings from "./pages/SystemSettings";
+import Categories from "./pages/settings/Categories";
+import StatusSettings from "./pages/settings/StatusSettings";
+import MyBorrows from "./pages/MyBorrows";
+import BorrowRequests from "./pages/BorrowRequests";
+import MyRequests from "./pages/MyRequests";
+import LabUsage from "./pages/LabUsage";
+import Announcements from "./pages/Announcements";
+import LabSchedule from "./pages/LabSchedule";
+import EquipmentMonitoring from "./pages/EquipmentMonitoring";
+import Notifications from "./pages/Notifications";
 
 type Notification = {
   title: string;
@@ -37,50 +51,19 @@ type Notification = {
 
 const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
+  
+  // Check maintenance mode
+  useMaintenanceMode();
 
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const currentUser: { id: string; email: string; role?: string; avatar_url?: string } | null = storedUser
     ? JSON.parse(storedUser)
     : null;
 
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const ws = new WebSocket("ws://localhost:8081");
-
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "identify",
-          userId: currentUser.id,
-          role: currentUser.role || "user",
-        })
-      );
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "notification" && data.payload) {
-          setNotifications((prev) => [data.payload, ...prev].slice(0, 20));
-          setUnreadCount((prev) => prev + 1);
-        }
-      } catch {
-        // ignore malformed messages
-      }
-    };
-
-    ws.onerror = () => {
-      // silently ignore for now
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, [currentUser?.id, currentUser?.role]);
+  const { notifications, unreadCount, isConnected, markAsRead, markAllAsRead } = useWebSocket(
+    currentUser?.id || "",
+    currentUser?.role || "student"
+  );
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -92,100 +75,7 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
           <AppSidebar />
-          <main className="flex-1 p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <SidebarTrigger />
-              <div className="flex items-center gap-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="relative">
-                      <Bell className="w-4 h-4" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-red-500 text-[10px] text-white px-1 min-w-[16px]">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-auto">
-                    <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {notifications.length === 0 ? (
-                      <DropdownMenuItem className="text-xs text-muted-foreground">
-                        No notifications yet.
-                      </DropdownMenuItem>
-                    ) : (
-                      notifications.map((n, idx) => (
-                        <DropdownMenuItem key={idx} className="flex flex-col items-start text-xs">
-                          <span className="font-medium">{n.title}</span>
-                          {n.message && (
-                            <span className="text-muted-foreground">{n.message}</span>
-                          )}
-                          <span className="text-[10px] text-muted-foreground mt-1">
-                            {new Date(n.timestamp).toLocaleString()}
-                          </span>
-                        </DropdownMenuItem>
-                      ))
-                    )}
-                    {notifications.length > 0 && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="justify-center text-xs text-blue-600 cursor-pointer"
-                          onClick={() => setUnreadCount(0)}
-                        >
-                          Mark all as read
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                        {currentUser?.avatar_url ? (
-                          <img
-                            src={`http://localhost/labmate-guardian-main/${currentUser.avatar_url}`}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <UserIcon className="w-4 h-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground text-left max-w-[160px] truncate">
-                        {currentUser?.email || "Unknown user"}
-                      </span>
-                      <span className="text-[10px] uppercase text-muted-foreground">
-                        {currentUser?.role || "user"}
-                      </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Profile</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="flex flex-col items-start text-xs">
-                      <span className="font-medium">{currentUser?.email || "Unknown"}</span>
-                      <span className="text-muted-foreground capitalize">
-                        Role: {currentUser?.role || "user"}
-                      </span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/profile")}>
-                      View Profile
-                    </DropdownMenuItem>
-                    {currentUser?.role === "admin" && (
-                      <DropdownMenuItem onClick={() => navigate("/users")}>
-                        Manage Users
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+          <main className="flex-1 ml-6">
             {children}
           </main>
         </div>
@@ -207,13 +97,20 @@ const App = () => (
           <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
           <Route path="/incidents" element={<ProtectedLayout><IncidentReports /></ProtectedLayout>} />
           <Route path="/lost-found" element={<ProtectedLayout><LostFound /></ProtectedLayout>} />
-          <Route path="/inventory" element={<ProtectedLayout><Inventory /></ProtectedLayout>} />
+          <Route path="/inventory" element={<ProtectedLayout><AdminRoute><Inventory /></AdminRoute></ProtectedLayout>} />
           <Route path="/borrow" element={<ProtectedLayout><BorrowItems /></ProtectedLayout>} />
-          <Route path="/visitors" element={<ProtectedLayout><VisitorLogs /></ProtectedLayout>} />
+          <Route path="/borrow-requests" element={<ProtectedLayout><AdminRoute><BorrowRequests /></AdminRoute></ProtectedLayout>} />
+          <Route path="/my-requests" element={<ProtectedLayout><MyRequests /></ProtectedLayout>} />
+          <Route path="/my-borrows" element={<ProtectedLayout><MyBorrows /></ProtectedLayout>} />
+          <Route path="/visitors" element={<ProtectedLayout><AdminRoute><VisitorLogs /></AdminRoute></ProtectedLayout>} />
           <Route path="/repairs" element={<ProtectedLayout><RepairMaintenance /></ProtectedLayout>} />
-          <Route path="/users" element={<ProtectedLayout><Users /></ProtectedLayout>} />
+          <Route path="/users" element={<ProtectedLayout><AdminRoute><Users /></AdminRoute></ProtectedLayout>} />
           <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/settings" element={<ProtectedLayout><AdminRoute><SystemSettings /></AdminRoute></ProtectedLayout>} />
+          <Route path="/settings/categories" element={<ProtectedLayout><AdminRoute><Categories /></AdminRoute></ProtectedLayout>} />
+          <Route path="/settings/status" element={<ProtectedLayout><AdminRoute><StatusSettings /></AdminRoute></ProtectedLayout>} />
+
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

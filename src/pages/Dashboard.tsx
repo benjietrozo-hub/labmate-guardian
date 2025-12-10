@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Package, Boxes, ClipboardList, Users, Wrench } from "lucide-react";
+import NavHeader from "@/components/NavHeader";
+import NotificationProfile from "@/components/NotificationProfile";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 const modules = [
   {
@@ -49,17 +52,46 @@ const modules = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  
+  const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  
+  const { 
+    notifications, 
+    unreadCount, 
+    markAllAsRead, 
+    loadMoreNotifications, 
+    hasMoreNotifications, 
+    totalNotifications,
+    removeNotification,
+    clearAllNotifications
+  } = useWebSocket(
+    currentUser?.id || "",
+    currentUser?.role || ""
+  );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Select a module to get started
-        </p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div>
+      <NavHeader 
+        title="Dashboard" 
+        subtitle="Select a module to get started"
+        showBackButton={false}
+        showHomeButton={false}
+      >
+        <NotificationProfile 
+          notifications={notifications}
+          unreadCount={unreadCount}
+          currentUser={currentUser}
+          markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
+        />
+      </NavHeader>
+      <div className="space-y-6 p-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => (
           <Card
             key={module.title}
@@ -80,6 +112,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
       </div>
     </div>
   );

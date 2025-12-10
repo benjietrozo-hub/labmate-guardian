@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import NavHeader from "@/components/NavHeader";
+import NotificationProfile from "@/components/NotificationProfile";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 const Inventory = () => {
   const navigate = useNavigate();
@@ -17,6 +20,14 @@ const Inventory = () => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  
+  const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  
+  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+    currentUser?.id || "",
+    currentUser?.role || ""
+  );
   const [formData, setFormData] = useState({
     date: "",
     name: "",
@@ -155,77 +166,80 @@ const Inventory = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="px-3 py-1 rounded border text-sm hover:bg-muted"
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="px-3 py-1 rounded border text-sm hover:bg-muted"
-          >
-            Home
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Inventory Equipment</h1>
-            <p className="text-muted-foreground">Track lab equipment catalog</p>
-          </div>
-        </div>
-        <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Equipment
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingItem ? "Edit" : "Add"} Equipment</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+    <div>
+      <NavHeader 
+        title="Inventory" 
+        subtitle="Manage equipment and supplies"
+        showBackButton={true}
+        showHomeButton={true}
+      >
+        <NotificationProfile 
+          notifications={notifications}
+          unreadCount={unreadCount}
+          currentUser={currentUser}
+          markAllAsRead={markAllAsRead}
+        />
+      </NavHeader>
+      <div className="space-y-6 p-6">
+        <div className="flex justify-end">
+          <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Equipment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editingItem ? "Edit" : "Add"} Equipment</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Date *</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Recorded By *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category *</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="electronics">Electronics</SelectItem>
+                        <SelectItem value="furniture">Furniture</SelectItem>
+                        <SelectItem value="tools">Tools</SelectItem>
+                        <SelectItem value="supplies">Supplies</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="item_description">Item Description *</Label>
+                    <Textarea
+                    id="item_description"
+                    value={formData.item_description}
+                    onChange={(e) => setFormData({ ...formData, item_description: e.target.value })}
                     required
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Recorded By *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Computer">Computer</SelectItem>
-                      <SelectItem value="Peripheral">Peripheral</SelectItem>
-                      <SelectItem value="Networking">Networking</SelectItem>
-                      <SelectItem value="Furniture">Furniture</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="serial_number">Serial Number</Label>
@@ -233,15 +247,6 @@ const Inventory = () => {
                     id="serial_number"
                     value={formData.serial_number}
                     onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="item_description">Description *</Label>
-                  <Textarea
-                    id="item_description"
-                    value={formData.item_description}
-                    onChange={(e) => setFormData({ ...formData, item_description: e.target.value })}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -256,24 +261,6 @@ const Inventory = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="condition">Condition</Label>
-                  <Select
-                    value={formData.condition}
-                    onValueChange={(value) => setFormData({ ...formData, condition: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select condition" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Excellent">Excellent</SelectItem>
-                      <SelectItem value="Good">Good</SelectItem>
-                      <SelectItem value="Fair">Fair</SelectItem>
-                      <SelectItem value="Poor">Poor</SelectItem>
-                      <SelectItem value="Damaged">Damaged</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2 col-span-2">
                   <Label htmlFor="purpose">Purpose</Label>
                   <Textarea
                     id="purpose"
@@ -290,12 +277,22 @@ const Inventory = () => {
                     onChange={(e) => setFormData({ ...formData, date_returned: e.target.value })}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="condition">Condition</Label>
+                  <Input
+                    id="condition"
+                    value={formData.condition}
+                    onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => { setOpen(false); resetForm(); }}>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">{editingItem ? "Update" : "Add"}</Button>
+                <Button type="submit">
+                  {editingItem ? "Update" : "Add"} Equipment
+                </Button>
               </div>
             </form>
           </DialogContent>
@@ -306,8 +303,10 @@ const Inventory = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Item</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead>Serial Number</TableHead>
               <TableHead>Quantity</TableHead>
               <TableHead>Condition</TableHead>
@@ -317,38 +316,24 @@ const Inventory = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={8} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No equipment found. Add one to get started.
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  No equipment found.
                 </TableCell>
               </TableRow>
             ) : (
               items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.item_description}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{item.category}</Badge>
-                  </TableCell>
+                  <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell>{item.item_description}</TableCell>
                   <TableCell>{item.serial_number || "N/A"}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
-                  <TableCell>
-                    {item.condition && (
-                      <Badge 
-                        variant="outline" 
-                        className={
-                          item.condition === "Excellent" ? "bg-green-100 text-green-800 border-green-200" :
-                          item.condition === "Good" ? "bg-blue-100 text-blue-800 border-blue-200" :
-                          item.condition === "Fair" ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
-                          "bg-red-100 text-red-800 border-red-200"
-                        }
-                      >
-                        {item.condition}
-                      </Badge>
-                    )}
-                  </TableCell>
+                  <TableCell>{item.condition || "N/A"}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button
                       size="sm"
@@ -370,6 +355,7 @@ const Inventory = () => {
             )}
           </TableBody>
         </Table>
+      </div>
       </div>
     </div>
   );

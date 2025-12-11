@@ -22,6 +22,7 @@ interface User {
   middle_name?: string;
   last_name?: string;
   created_at: string;
+  avatar_url?: string;
 }
 
 const getUserType = (user: User): string => {
@@ -80,7 +81,7 @@ const Users = () => {
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   
-  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+  const { notifications, unreadCount, markAllAsRead, loadMoreNotifications, hasMoreNotifications, totalNotifications, removeNotification, clearAllNotifications } = useWebSocket(
     currentUser?.id || "",
     currentUser?.role || ""
   );
@@ -250,7 +251,7 @@ const Users = () => {
     setEditingUser(user);
     setEditFormData({ 
       email: user.email, 
-      role: user.role, 
+      role: normalizeRole(user.role), 
       id_number: user.id_number,
       first_name: user.first_name || "",
       middle_name: user.middle_name || "",
@@ -323,9 +324,14 @@ const Users = () => {
           unreadCount={unreadCount}
           currentUser={currentUser}
           markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
         />
       </NavHeader>
-      <div className="space-y-6 p-6">
+      <div className="container mx-auto p-6 pt-20">
         <div className="flex justify-end">
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -478,7 +484,7 @@ const Users = () => {
           </Dialog>
         </div>
 
-        <div className="border rounded-lg">
+        <div className="border rounded-lg" style={{ transform: 'scale(0.8)', transformOrigin: 'top left', width: '125%', height: '125%' }}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -510,9 +516,9 @@ const Users = () => {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center justify-center">
-                        {user.avatar_url ? (
+                        {(user as any).avatar_url ? (
                           <img
-                            src={user.avatar_url}
+                            src={(user as any).avatar_url}
                             alt={`${user.first_name || 'User'} ${user.last_name || ''}`}
                             className="w-10 h-10 rounded-full object-cover border"
                             onError={(e) => {
@@ -563,7 +569,7 @@ const Users = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/profile?user=${String(user.id)}`)}
+                        onClick={() => navigate(`/profile?user=${user.id}`)}
                       >
                         View Profile
                       </Button>

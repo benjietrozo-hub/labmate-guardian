@@ -57,7 +57,7 @@ const Reservations = () => {
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   
-  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+  const { notifications, unreadCount, markAllAsRead, loadMoreNotifications, hasMoreNotifications, totalNotifications, removeNotification, clearAllNotifications } = useWebSocket(
     currentUser?.id || "",
     currentUser?.role || ""
   );
@@ -209,20 +209,34 @@ const Reservations = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       <NavHeader 
         title="Equipment Reservations" 
-        notifications={notifications}
-        unreadCount={unreadCount}
-        onMarkAllAsRead={markAllAsRead}
-        user={currentUser}
-      />
+        subtitle="Manage equipment reservations and waiting lists"
+        showBackButton={true}
+        showHomeButton={true}
+      >
+        <NotificationProfile 
+          notifications={notifications}
+          unreadCount={unreadCount}
+          currentUser={currentUser}
+          markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
+        />
+      </NavHeader>
       
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Equipment Reservations</h1>
-          
+      <div className="container mx-auto p-6 pt-20" style={{ transform: 'scale(0.74)', transformOrigin: 'top left', width: '120%' }}>
+        <div className="flex justify-between items-center mb-8">
           <div className="flex gap-2">
+            {currentUser?.role === 'admin' && (
+              <Button onClick={() => setViewMode("calendar")}>
+                Create Reservation
+              </Button>
+            )}
             <Button
               variant={viewMode === "list" ? "default" : "outline"}
               onClick={() => setViewMode("list")}
@@ -242,6 +256,7 @@ const Reservations = () => {
           <ReservationCalendar 
             equipment={equipment}
             currentUserId={currentUser?.id}
+            currentUserRole={currentUser?.role}
             onReservationCreate={fetchData}
           />
         ) : (

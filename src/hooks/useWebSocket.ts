@@ -105,7 +105,7 @@ export const useWebSocket = (userId: string, role: string) => {
             console.log("Notification type:", data.payload.type);
             
             // Handle borrow-specific notifications
-            if (data.payload.type === 'borrow_status_update' || data.payload.type === 'admin_borrow_update') {
+            if (data.payload.type === 'borrow_status_update' || data.payload.type === 'admin_borrow_update' || data.payload.type === 'borrow_request_submitted') {
               console.log("Calling handleBorrowStatusUpdate");
               handleBorrowStatusUpdate(data.payload);
             } else {
@@ -180,7 +180,7 @@ export const useWebSocket = (userId: string, role: string) => {
     switch (new_status) {
       case 'pending':
         title = "🔴 New Borrow Request";
-        message = `${borrower_name} wants to borrow ${item} (${quantity}) - Action required!`;
+        message = `${borrower_name} wants to borrow ${item} (${displayQuantity}) - Action required!`;
         type = "error"; // Use error type for red flag indicator
         break;
       case 'approved':

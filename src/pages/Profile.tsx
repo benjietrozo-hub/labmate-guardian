@@ -91,7 +91,7 @@ const Profile = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        const targetUser = result.data.find((u: StoredUser) => u.id === userId);
+        const targetUser = result.data[0]; // Direct access since API returns array with single user
         if (targetUser) {
           // Convert 'user' role from database to 'student' for frontend
           const frontendUser = {
@@ -326,7 +326,7 @@ const Profile = () => {
           clearAllNotifications={clearAllNotifications}
         />
       </NavHeader>
-      <div className="space-y-6 max-w-2xl mx-auto p-6">
+      <div className="container mx-auto p-6 pt-20">
 
       <Card>
         <CardHeader>

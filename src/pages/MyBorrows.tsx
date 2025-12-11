@@ -12,6 +12,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 interface BorrowRecord {
   id: string;
   borrower_name: string;
+  borrower_email?: string;
   item: string;
   quantity: number;
   borrow_date: string;
@@ -28,7 +29,7 @@ const MyBorrows = () => {
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   const userRole = currentUser?.role || "student";
   
-  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+  const { notifications, unreadCount, markAllAsRead, loadMoreNotifications, hasMoreNotifications, totalNotifications, removeNotification, clearAllNotifications } = useWebSocket(
     currentUser?.id || "",
     currentUser?.role || ""
   );
@@ -122,9 +123,14 @@ const MyBorrows = () => {
           unreadCount={unreadCount}
           currentUser={currentUser}
           markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
         />
       </NavHeader>
-      <div className="space-y-6 p-6">
+      <div className="container mx-auto p-6 pt-20">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (

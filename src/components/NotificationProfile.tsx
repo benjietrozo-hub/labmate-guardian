@@ -62,7 +62,7 @@ const NotificationProfile = ({
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-auto">
+        <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-auto" sideOffset={8} collisionPadding={8}>
           <DropdownMenuLabel className="flex justify-between items-center">
             <span>Notifications</span>
             {totalNotifications > 0 && (
@@ -178,7 +178,7 @@ const NotificationProfile = ({
             </span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-56" sideOffset={8} collisionPadding={8}>
           <DropdownMenuLabel>Profile</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="flex flex-col items-start text-xs">

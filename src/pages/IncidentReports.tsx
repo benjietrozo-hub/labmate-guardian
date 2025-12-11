@@ -22,7 +22,7 @@ const IncidentReports = () => {
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   
-  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+  const { notifications, unreadCount, markAllAsRead, loadMoreNotifications, hasMoreNotifications, totalNotifications, removeNotification, clearAllNotifications } = useWebSocket(
     currentUser?.id || "",
     currentUser?.role || ""
   );
@@ -194,10 +194,15 @@ const IncidentReports = () => {
           unreadCount={unreadCount}
           currentUser={currentUser}
           markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
         />
       </NavHeader>
-      <div className="space-y-6 p-6">
-        <div className="flex justify-end">
+      <div className="container mx-auto p-6 pt-20" style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '125%' }}>
+        <div className="flex justify-end mb-8">
           <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) resetForm(); }}>
             <DialogTrigger asChild>
               <Button>
@@ -344,58 +349,60 @@ const IncidentReports = () => {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Article</TableHead>
-              <TableHead>Serial Number</TableHead>
-              <TableHead>Property Number</TableHead>
-              <TableHead>Unit Value</TableHead>
-              <TableHead>Accredited To</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+      <div className="flex justify-center">
+        <div className="border rounded-lg w-full max-w-6xl" style={{ transform: 'scale(1.1)', transformOrigin: 'center' }}>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableHead>Article</TableHead>
+                <TableHead>Serial Number</TableHead>
+                <TableHead>Property Number</TableHead>
+                <TableHead>Unit Value</TableHead>
+                <TableHead>Accredited To</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : reports.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No incident reports found. Create one to get started.
-                </TableCell>
-              </TableRow>
-            ) : (
-              reports.map((report) => (
-                <TableRow key={report.id}>
-                  <TableCell className="font-medium">{report.article}</TableCell>
-                  <TableCell>{report.serial_number || "N/A"}</TableCell>
-                  <TableCell>{report.property_number || "N/A"}</TableCell>
-                  <TableCell>{report.unit_value ? `$${report.unit_value}` : "N/A"}</TableCell>
-                  <TableCell>{report.accredited_to || "N/A"}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEdit(report)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDelete(report.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                </TableRow>
+              ) : reports.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    No incident reports found. Create one to get started.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                reports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium">{report.article}</TableCell>
+                    <TableCell>{report.serial_number || "N/A"}</TableCell>
+                    <TableCell>{report.property_number || "N/A"}</TableCell>
+                    <TableCell>{report.unit_value ? `$${report.unit_value}` : "N/A"}</TableCell>
+                    <TableCell>{report.accredited_to || "N/A"}</TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEdit(report)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(report.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       </div>
     </div>

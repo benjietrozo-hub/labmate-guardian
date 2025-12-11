@@ -16,7 +16,7 @@ if ($email === '' || $password === '') {
     send_json(['success' => false, 'error' => 'Email and password are required'], 400);
 }
 
-$stmt = $conn->prepare('SELECT id, password_hash, role FROM users WHERE email = ? LIMIT 1');
+$stmt = $conn->prepare('SELECT id, password_hash, role, first_name, middle_name, last_name FROM users WHERE email = ? LIMIT 1');
 if (!$stmt) {
     send_json(['success' => false, 'error' => $conn->error], 500);
 }
@@ -40,5 +40,8 @@ send_json([
         'id' => $row['id'],
         'email' => $email,
         'role' => $row['role'] ?? 'user',
+        'first_name' => $row['first_name'],
+        'middle_name' => $row['middle_name'],
+        'last_name' => $row['last_name'],
     ],
 ]);

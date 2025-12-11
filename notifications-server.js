@@ -81,7 +81,7 @@ app.post("/notify", (req, res) => {
       console.log(`Final notification payload:`, JSON.stringify(notificationPayload, null, 2));
       client.ws.send(JSON.stringify({ type: "notification", payload: notificationPayload }));
       sent = true;
-    } else if (data.type === 'borrow_status_update' && client.userId === user_id) {
+    } else if ((data.type === 'borrow_status_update' || data.type === 'borrow_request_submitted') && client.userId === user_id) {
       console.log(`Sending user notification to client ${client.userId}`);
       client.ws.send(JSON.stringify({ type: "notification", payload: data }));
       sent = true;

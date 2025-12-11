@@ -57,7 +57,7 @@ export default function UserAnalytics() {
   const currentUser = typeof window !== "undefined" ? 
     JSON.parse(localStorage.getItem("user") || "{}") : null;
 
-  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+  const { notifications, unreadCount, markAllAsRead, loadMoreNotifications, hasMoreNotifications, totalNotifications, removeNotification, clearAllNotifications } = useWebSocket(
     currentUser?.id || "", 
     currentUser?.role || "student"
   );
@@ -118,13 +118,24 @@ export default function UserAnalytics() {
     <div className="min-h-screen bg-gray-50">
       <NavHeader 
         title="My Analytics" 
-        notifications={notifications}
-        unreadCount={unreadCount}
-        onMarkAllAsRead={markAllAsRead}
-        user={currentUser}
-      />
+        subtitle="View your usage statistics and analytics"
+        showBackButton={true}
+        showHomeButton={true}
+      >
+        <NotificationProfile 
+          notifications={notifications}
+          unreadCount={unreadCount}
+          currentUser={currentUser}
+          markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
+        />
+      </NavHeader>
       
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6 pt-20">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">My Usage Analytics</h1>
           

@@ -29,7 +29,7 @@ const BorrowItems = () => {
   const isAdmin = currentUser?.role === "admin";
   const canBorrow = currentUser?.role === "admin" || currentUser?.role === "instructor" || currentUser?.role === "teacher" || currentUser?.role === "student";
   
-  const { notifications, unreadCount, isConnected, markAllAsRead } = useWebSocket(
+  const { notifications, unreadCount, isConnected, markAllAsRead, loadMoreNotifications, hasMoreNotifications, totalNotifications, removeNotification, clearAllNotifications } = useWebSocket(
     currentUser?.id || "",
     currentUser?.role || ""
   );
@@ -51,6 +51,7 @@ const BorrowItems = () => {
     quantity: "1",
     return_date: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -142,8 +143,10 @@ const BorrowItems = () => {
   };
 
   const handleBorrowSubmit = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem || isSubmitting) return;
 
+    setIsSubmitting(true);
+    
     try {
       const response = await fetch("http://localhost/labmate-guardian-main/api/borrow_requests.php", {
         method: "POST",
@@ -173,6 +176,8 @@ const BorrowItems = () => {
       fetchAvailableItems();
     } catch (error: any) {
       toast.error(error.message || "Failed to submit borrow request");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -209,9 +214,14 @@ const BorrowItems = () => {
           unreadCount={unreadCount}
           currentUser={currentUser}
           markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
         />
       </NavHeader>
-      <div className="space-y-6 p-6">
+      <div className="container mx-auto p-6 pt-20">
         {isAdmin ? (
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold">Borrowed Items</h2>
@@ -449,7 +459,7 @@ const BorrowItems = () => {
                 </div>
               ) : (
                 items
-                  .filter(item => item.borrower_name === currentUser?.email)
+                  .filter(item => item.borrower_email === currentUser?.email)
                   .map((item) => (
                     <Card key={item.id} className="hover:shadow-lg transition-shadow">
                       <CardHeader>
@@ -537,9 +547,18 @@ const BorrowItems = () => {
                     <Button type="button" variant="outline" onClick={() => setBorrowModalOpen(false)}>
                       Cancel
                     </Button>
-                    <Button type="submit">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Borrow Item
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Borrow Item
+                        </>
+                      )}
                     </Button>
                   </div>
                 </form>

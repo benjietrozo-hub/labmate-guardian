@@ -22,7 +22,7 @@ const VisitorLogs = () => {
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   
-  const { notifications, unreadCount, markAllAsRead } = useWebSocket(
+  const { notifications, unreadCount, markAllAsRead, loadMoreNotifications, hasMoreNotifications, totalNotifications, removeNotification, clearAllNotifications } = useWebSocket(
     currentUser?.id || "",
     currentUser?.role || ""
   );
@@ -136,9 +136,14 @@ const VisitorLogs = () => {
           unreadCount={unreadCount}
           currentUser={currentUser}
           markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
         />
       </NavHeader>
-      <div className="space-y-6 p-6">
+      <div className="container mx-auto p-6 pt-20">
         <div className="flex justify-end">
           <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) resetForm(); }}>
             <DialogTrigger asChild>

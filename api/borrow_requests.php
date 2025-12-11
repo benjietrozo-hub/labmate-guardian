@@ -67,8 +67,8 @@ function handle_post(mysqli $conn): void {
         send_json(['success' => false, 'error' => $stmt->error], 500);
     }
 
-    // Send notification to admins about new request
-    send_borrow_request_notification($id, $borrower_name, $borrower_email, $item, $quantity);
+    // Send consolidated notifications
+    send_consolidated_borrow_notifications($id, $borrower_name, $borrower_email, $item, $quantity);
 
     send_json(['success' => true]);
 }
@@ -218,6 +218,56 @@ function create_borrowed_item_from_request($request, $approved_by) {
     }
 }
 
+function send_consolidated_borrow_notifications($request_id, $borrower_name, $borrower_email, $item, $quantity) {
+    // Get user ID from email
+    global $conn;
+    $user_sql = "SELECT id FROM users WHERE email=?";
+    $user_stmt = $conn->prepare($user_sql);
+    $user_stmt->bind_param('s', $borrower_email);
+    $user_stmt->execute();
+    $user_result = $user_stmt->get_result();
+    $user = $user_result->fetch_assoc();
+    
+    if (!$user) return;
+
+    // Send notification to admins about new request only
+    $admin_notification_data = [
+        'type' => 'admin_borrow_update',
+        'request_id' => $request_id,
+        'borrower_name' => $borrower_name,
+        'item' => $item,
+        'quantity' => $quantity,
+        'user_id' => $user['id'],
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+    send_websocket_notification_to_admins($admin_notification_data);
+}
+
+function send_borrow_request_confirmation($request_id, $borrower_name, $borrower_email, $item, $quantity) {
+    // Get user ID from email
+    global $conn;
+    $user_sql = "SELECT id FROM users WHERE email=?";
+    $user_stmt = $conn->prepare($user_sql);
+    $user_stmt->bind_param('s', $borrower_email);
+    $user_stmt->execute();
+    $user_result = $user_stmt->get_result();
+    $user = $user_result->fetch_assoc();
+    
+    if (!$user) return;
+
+    $notification_data = [
+        'type' => 'borrow_request_submitted',
+        'request_id' => $request_id,
+        'borrower_name' => $borrower_name,
+        'item' => $item,
+        'quantity' => $quantity,
+        'user_id' => $user['id'],
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+
+    send_websocket_notification($user['id'], $notification_data);
+}
+
 function send_borrow_request_notification($request_id, $borrower_name, $borrower_email, $item, $quantity) {
     // Get user ID from email
     global $conn;
@@ -271,15 +321,8 @@ function send_request_status_notification($request, $new_status, $rejection_reas
 }
 
 function send_websocket_notification_to_admins($data) {
-    global $conn;
-    
-    // Get all admin users
-    $admin_sql = "SELECT id FROM users WHERE role='admin'";
-    $admin_result = $conn->query($admin_sql);
-    
-    while ($admin = $admin_result->fetch_assoc()) {
-        send_websocket_notification($admin['id'], $data);
-    }
+    // Send single broadcast notification for all admins
+    send_websocket_notification('admin_broadcast', $data);
 }
 
 function send_websocket_notification($user_id, $data) {

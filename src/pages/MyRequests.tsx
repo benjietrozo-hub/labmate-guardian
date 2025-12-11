@@ -111,7 +111,7 @@ const MyRequests = () => {
         />
       </NavHeader>
       
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6 pt-20">
         {isConnected && (
           <div className="mb-4">
             <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
@@ -121,7 +121,7 @@ const MyRequests = () => {
         )}
         
         <div className="mb-4">
-          <Button onClick={() => navigate("/borrow-items")} className="mr-2">
+          <Button onClick={() => navigate("/borrow")} className="mr-2">
             Browse Available Items
           </Button>
           <Button variant="outline" onClick={fetchMyRequests}>

@@ -90,7 +90,7 @@ const Dashboard = () => {
           clearAllNotifications={clearAllNotifications}
         />
       </NavHeader>
-      <div className="space-y-6 p-6">
+      <div className="container mx-auto p-6 pt-20">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => (
           <Card

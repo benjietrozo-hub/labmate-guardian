@@ -37,14 +37,17 @@ interface ReservationCalendarProps {
   equipment: Equipment[];
   onReservationCreate?: (reservation: any) => void;
   currentUserId?: number;
+  currentUserRole?: string;
 }
 
-export function ReservationCalendar({ equipment, onReservationCreate, currentUserId }: ReservationCalendarProps) {
+export function ReservationCalendar({ equipment, onReservationCreate, currentUserId, currentUserRole }: ReservationCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedEquipment, setSelectedEquipment] = useState<string>("");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<string>("");
   const [formData, setFormData] = useState({
     start_time: "09:00",
     end_time: "11:00",
@@ -58,6 +61,12 @@ export function ReservationCalendar({ equipment, onReservationCreate, currentUse
       fetchReservations();
     }
   }, [selectedEquipment, selectedDate]);
+
+  useEffect(() => {
+    if (currentUserRole === 'admin') {
+      fetchUsers();
+    }
+  }, [currentUserRole]);
 
   const fetchReservations = async () => {
     if (!selectedEquipment || !selectedDate) return;
@@ -73,6 +82,16 @@ export function ReservationCalendar({ equipment, onReservationCreate, currentUse
       console.error('Error fetching reservations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch("http://localhost/labmate-guardian-main/api/users.php");
+      const result = await response.json();
+      setUsers(result.data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
     }
   };
 
@@ -133,7 +152,7 @@ export function ReservationCalendar({ equipment, onReservationCreate, currentUse
         end_time: formData.end_time,
         quantity_reserved: formData.quantity,
         purpose: formData.purpose,
-        user_id: currentUserId
+        user_id: currentUserRole === 'admin' ? selectedUser : currentUserId
       };
 
       const response = await fetch('http://localhost/labmate-guardian-main/api/reservations.php', {
@@ -213,6 +232,27 @@ export function ReservationCalendar({ equipment, onReservationCreate, currentUse
                     <DialogTitle>New Reservation</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {currentUserRole === 'admin' && (
+                      <div>
+                        <Label htmlFor="user">User</Label>
+                        <Select value={selectedUser} onValueChange={setSelectedUser} required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select user" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users.map((user) => (
+                              <SelectItem key={user.id} value={user.id}>
+                                {user.first_name && user.last_name 
+                                  ? `${user.first_name} ${user.last_name} (${user.email})`
+                                  : user.email
+                                }
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="start_time">Start Time</Label>

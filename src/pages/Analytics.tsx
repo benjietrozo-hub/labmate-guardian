@@ -95,7 +95,7 @@ export default function Analytics() {
   const [userPatterns, setUserPatterns] = useState<UserPattern[]>([]);
   const [trends, setTrends] = useState<Trend[]>([]);
 
-  const { notifications, unreadCount, markAllAsRead } = useWebSocket("admin", "admin");
+  const { notifications, unreadCount, markAllAsRead, loadMoreNotifications, hasMoreNotifications, totalNotifications, removeNotification, clearAllNotifications } = useWebSocket("admin", "admin");
 
   useEffect(() => {
     fetchAnalytics();
@@ -177,16 +177,27 @@ export default function Analytics() {
   })) || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       <NavHeader 
         title="Analytics Dashboard" 
-        notifications={notifications}
-        unreadCount={unreadCount}
-        onMarkAllAsRead={markAllAsRead}
-        user={{ id: "admin", email: "admin@example.com", role: "admin" }}
-      />
+        subtitle="View system usage statistics and reports"
+        showBackButton={true}
+        showHomeButton={true}
+      >
+        <NotificationProfile 
+          notifications={notifications}
+          unreadCount={unreadCount}
+          currentUser={{ id: "admin", email: "admin@example.com", role: "admin" }}
+          markAllAsRead={markAllAsRead}
+          loadMoreNotifications={loadMoreNotifications}
+          hasMoreNotifications={hasMoreNotifications}
+          totalNotifications={totalNotifications}
+          removeNotification={removeNotification}
+          clearAllNotifications={clearAllNotifications}
+        />
+      </NavHeader>
       
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6 pt-20">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Usage Analytics</h1>
           

@@ -42,6 +42,9 @@ import Announcements from "./pages/Announcements";
 import LabSchedule from "./pages/LabSchedule";
 import EquipmentMonitoring from "./pages/EquipmentMonitoring";
 import Notifications from "./pages/Notifications";
+import Reservations from "./pages/Reservations";
+import Analytics from "./pages/Analytics";
+import UserAnalytics from "./pages/UserAnalytics";
 
 type Notification = {
   title: string;
@@ -104,6 +107,9 @@ const App = () => (
           <Route path="/my-borrows" element={<ProtectedLayout><MyBorrows /></ProtectedLayout>} />
           <Route path="/visitors" element={<ProtectedLayout><AdminRoute><VisitorLogs /></AdminRoute></ProtectedLayout>} />
           <Route path="/repairs" element={<ProtectedLayout><RepairMaintenance /></ProtectedLayout>} />
+          <Route path="/reservations" element={<ProtectedLayout><Reservations /></ProtectedLayout>} />
+          <Route path="/analytics" element={<ProtectedLayout><AdminRoute><Analytics /></AdminRoute></ProtectedLayout>} />
+          <Route path="/my-analytics" element={<ProtectedLayout><UserAnalytics /></ProtectedLayout>} />
           <Route path="/users" element={<ProtectedLayout><AdminRoute><Users /></AdminRoute></ProtectedLayout>} />
           <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
           <Route path="*" element={<NotFound />} />

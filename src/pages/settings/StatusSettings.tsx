@@ -119,6 +119,15 @@ export default function StatusSettings() {
           is_default: false,
           item_count: 3,
           created_at: "2024-01-15T10:30:00Z"
+        },
+        {
+          id: 5,
+          name: "Reserved",
+          description: "Item is reserved for future use",
+          color: "#8b5cf6",
+          is_default: false,
+          item_count: 5,
+          created_at: "2024-01-15T10:30:00Z"
         }
       ];
       

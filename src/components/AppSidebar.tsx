@@ -21,13 +21,16 @@ import {
   ClipboardList, 
   Users, 
   Wrench,
-  Computer
+  Computer,
+  Calendar,
+  BarChart3
 } from "lucide-react";
 
 const items = [
   { title: "Incident Reports", url: "/incidents", icon: AlertCircle },
   { title: "Lost & Found", url: "/lost-found", icon: Package },
   { title: "Repair & Maintenance", url: "/repairs", icon: Wrench },
+  { title: "Equipment Reservations", url: "/reservations", icon: Calendar },
 ];
 
 const adminItems = [
@@ -35,15 +38,20 @@ const adminItems = [
   { title: "Borrowed Items", url: "/borrow", icon: Package },
   { title: "Inventory Equipment", url: "/inventory", icon: Boxes },
   { title: "Visitor Logs", url: "/visitors", icon: Users },
+  { title: "Analytics", url: "/analytics", icon: BarChart3 },
 ];
 
 const teacherItems = [
   { title: "Borrow Equipment", url: "/borrow", icon: Package },
   { title: "My Borrowed Items", url: "/my-borrows", icon: ClipboardList },
+  { title: "My Reservations", url: "/reservations", icon: Calendar },
+  { title: "My Analytics", url: "/my-analytics", icon: BarChart3 },
 ];
 
 const studentItems = [
   { title: "Borrow Equipment", url: "/borrow", icon: Package },
+  { title: "My Reservations", url: "/reservations", icon: Calendar },
+  { title: "My Analytics", url: "/my-analytics", icon: BarChart3 },
 ];
 const settings = [
   { title: "General Settings", url: "/settings", icon: Settings },

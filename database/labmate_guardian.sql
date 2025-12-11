@@ -251,7 +251,7 @@ CREATE TABLE `users` (
   `middle_name` varchar(100) DEFAULT NULL,
   `last_name` varchar(100) DEFAULT NULL,
   `password_hash` varchar(255) NOT NULL,
-  `role` enum('admin','user') NOT NULL DEFAULT 'user',
+  `role` enum('admin','user','instructor') NOT NULL DEFAULT 'user',
   `avatar_url` varchar(255) DEFAULT NULL,
   `id_number` varchar(9) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp()

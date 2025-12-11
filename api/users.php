@@ -66,17 +66,21 @@ function handle_post(mysqli $conn): void {
     $password = $input['password'] ?? '';
     $role = $input['role'] ?? 'user';
     $id_number = $input['id_number'] ?? null;
+    $first_name = $input['first_name'] ?? null;
+    $middle_name = $input['middle_name'] ?? null;
+    $last_name = $input['last_name'] ?? null;
 
     if ($email === '' || $password === '') {
         send_json(['success' => false, 'error' => 'Email and password are required'], 400);
     }
 
-    // Handle role transition - convert student/instructor to user for database compatibility
-    if ($role === 'student' || $role === 'instructor') {
+    // Handle role transition - only convert student to user for database compatibility
+    // Keep instructor as is since we want to distinguish it from student
+    if ($role === 'student') {
         $role = 'user';
     }
 
-    if (!in_array($role, ['admin', 'user'], true)) {
+    if (!in_array($role, ['admin', 'user', 'instructor'], true)) {
         $role = 'user';
     }
 
@@ -97,13 +101,17 @@ function handle_post(mysqli $conn): void {
     }
 
     $hash = password_hash($password, PASSWORD_BCRYPT);
-    $id = bin2hex(random_bytes(16));
+    
+    // Generate a numeric ID for the users table (which uses int(11) AUTO_INCREMENT)
+    $result = $conn->query("SELECT MAX(id) as max_id FROM users");
+    $row = $result->fetch_assoc();
+    $id = ($row['max_id'] ?? 0) + 1;
 
-    $stmt = $conn->prepare('INSERT INTO users (id, email, password_hash, role, id_number, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+    $stmt = $conn->prepare('INSERT INTO users (id, email, password_hash, role, id_number, first_name, middle_name, last_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())');
     if (!$stmt) {
         send_json(['success' => false, 'error' => $conn->error], 500);
     }
-    $stmt->bind_param('sssss', $id, $email, $hash, $role, $id_number);
+    $stmt->bind_param('isssssss', $id, $email, $hash, $role, $id_number, $first_name, $middle_name, $last_name);
 
     if (!$stmt->execute()) {
         send_json(['success' => false, 'error' => $stmt->error], 500);
@@ -111,7 +119,15 @@ function handle_post(mysqli $conn): void {
 
     // Convert back to frontend role format for response
     $frontend_role = ($role === 'user') ? 'student' : $role;
-    send_json(['success' => true, 'user' => ['id' => $id, 'email' => $email, 'role' => $frontend_role, 'id_number' => $id_number]], 201);
+    send_json(['success' => true, 'user' => [
+        'id' => $id, 
+        'email' => $email, 
+        'role' => $frontend_role, 
+        'id_number' => $id_number,
+        'first_name' => $first_name,
+        'middle_name' => $middle_name,
+        'last_name' => $last_name
+    ]], 201);
 }
 
 function handle_put(mysqli $conn): void {
@@ -140,12 +156,13 @@ function handle_put(mysqli $conn): void {
 
     // Validate role if provided
     if ($role !== null) {
-        // Handle role transition - convert student/instructor to user for database compatibility
-        if ($role === 'student' || $role === 'instructor') {
+        // Handle role transition - only convert student to user for database compatibility
+        // Keep instructor as is since we want to distinguish it from student
+        if ($role === 'student') {
             $role = 'user';
         }
 
-        if (!in_array($role, ['admin', 'user'], true)) {
+        if (!in_array($role, ['admin', 'user', 'instructor'], true)) {
             send_json(['success' => false, 'error' => 'Invalid role'], 400);
         }
     }

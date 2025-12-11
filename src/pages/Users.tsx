@@ -6,21 +6,68 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 import NavHeader from "@/components/NavHeader";
 import NotificationProfile from "@/components/NotificationProfile";
 import { useWebSocket } from "@/hooks/useWebSocket";
 
 interface User {
-  id: string;
+  id: string | number;
   email: string;
-  role: "admin" | "student" | "instructor";
+  role: "admin" | "student" | "instructor" | "user";
   id_number: string;
   first_name?: string;
   middle_name?: string;
   last_name?: string;
   created_at: string;
 }
+
+const getUserType = (user: User): string => {
+  if (user.role === 'admin') {
+    // Check if this is the root admin (id 6717 or specific email)
+    if (user.id === 6717 || user.email === 'benjie.trozo@csucc.edu.ph') {
+      return 'Root Administrator';
+    }
+    return 'Administrator';
+  }
+  if (user.role === 'instructor') return 'Instructor';
+  if (user.role === 'user') return 'Student';
+  if (user.role === 'student') return 'Student';
+  return 'User';
+};
+
+const getUserTypeDisplay = (user: User): string => {
+  if (user.role === 'admin') {
+    if (user.id === 6717 || user.email === 'benjie.trozo@csucc.edu.ph') {
+      return 'Root Administrator';
+    }
+    return 'Administrator';
+  }
+  if (user.role === 'instructor') return 'Instructor';
+  return 'Student';
+};
+
+const getRoleDisplay = (role: string): string => {
+  switch (role) {
+    case 'admin':
+      return 'Administrator';
+    case 'user':
+      return 'Student';
+    case 'student':
+      return 'Student';
+    case 'instructor':
+      return 'Instructor';
+    default:
+      return 'User';
+  }
+};
+
+const normalizeRole = (role: string): "admin" | "student" | "instructor" => {
+  if (role === 'user') return 'student';
+  return role as "admin" | "student" | "instructor";
+};
 
 const Users = () => {
   const navigate = useNavigate();
@@ -40,12 +87,16 @@ const Users = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
     role: "student" as "admin" | "student" | "instructor",
     id_number: "",
     first_name: "",
     middle_name: "",
     last_name: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [editFormData, setEditFormData] = useState({
     email: "",
@@ -90,11 +141,20 @@ const Users = () => {
     return idPattern.test(idNumber);
   };
 
+  const validatePassword = (): boolean => {
+    return formData.password === formData.confirmPassword && formData.password.length > 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateIdNumber(formData.id_number)) {
       toast.error("ID number must be in format xxxx-xxxx (e.g., 1234-5678)");
+      return;
+    }
+
+    if (!validatePassword()) {
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -126,6 +186,7 @@ const Users = () => {
       setFormData({ 
         email: "", 
         password: "", 
+        confirmPassword: "",
         role: "student", 
         id_number: "",
         first_name: "",
@@ -146,12 +207,8 @@ const Users = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-        email: editFormData.email,
-        role: editFormData.role,
-        id_number: editFormData.id_number,
-        first_name: editFormData.first_name,
-        middle_name: editFormData.middle_name,
-        last_name: editFormData.last_name,
+        email: email,
+        role: role,
       }),
       });
 
@@ -274,7 +331,7 @@ const Users = () => {
             <DialogTrigger asChild>
               <Button>Add User</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
               </DialogHeader>
@@ -329,13 +386,55 @@ const Users = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="id_number">ID Number</Label>
@@ -383,10 +482,12 @@ const Users = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Avatar</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>ID Number</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>User Type</TableHead>
                 <TableHead>Created At</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -394,19 +495,41 @@ const Users = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={8} className="text-center">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     No users found.
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center justify-center">
+                        {user.avatar_url ? (
+                          <img
+                            src={user.avatar_url}
+                            alt={`${user.first_name || 'User'} ${user.last_name || ''}`}
+                            className="w-10 h-10 rounded-full object-cover border"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm ${
+                          user.role === 'admin' ? 'bg-red-500' : 
+                          user.role === 'instructor' ? 'bg-blue-500' : 'bg-gray-500'
+                        } ${user.avatar_url ? 'hidden' : ''}`}>
+                          {user.first_name ? user.first_name.charAt(0).toUpperCase() : 'U'}
+                          {user.last_name ? user.last_name.charAt(0).toUpperCase() : ''}
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium">
                       {[user.first_name, user.middle_name, user.last_name]
                         .filter(Boolean)
@@ -414,7 +537,25 @@ const Users = () => {
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.id_number}</TableCell>
-                    <TableCell className="capitalize">{user.role}</TableCell>
+                    <TableCell className="capitalize">
+                      {user.role === 'admin' ? 'admin' : 'user'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {user.role === 'admin' && (user.id === 6717 || user.email === 'benjie.trozo@csucc.edu.ph') && (
+                          <Badge variant="destructive" className="text-xs">Root Administrator</Badge>
+                        )}
+                        {user.role === 'admin' && !(user.id === 6717 || user.email === 'benjie.trozo@csucc.edu.ph') && (
+                          <Badge variant="destructive" className="text-xs">Administrator</Badge>
+                        )}
+                        {user.role === 'instructor' && (
+                          <Badge variant="outline" className="text-xs">Instructor</Badge>
+                        )}
+                        {(user.role === 'user' || user.role === 'student') && (
+                          <Badge variant="secondary" className="text-xs">Student</Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {user.created_at ? new Date(user.created_at).toLocaleString() : "-"}
                     </TableCell>
@@ -422,12 +563,12 @@ const Users = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/profile?user=${user.id}`)}
+                        onClick={() => navigate(`/profile?user=${String(user.id)}`)}
                       >
                         View Profile
                       </Button>
                       <Select
-                        value={user.role}
+                        value={normalizeRole(user.role)}
                         onValueChange={(value) =>
                           handleRoleChange(user.id, user.email, value as "admin" | "student" | "instructor")
                         }
@@ -451,7 +592,7 @@ const Users = () => {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => handleDelete(String(user.id))}
                       >
                         Delete
                       </Button>
@@ -476,7 +617,6 @@ const Users = () => {
                   type="email"
                   value={editFormData.email}
                   onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                  required
                 />
               </div>
               
@@ -484,14 +624,13 @@ const Users = () => {
                 <Label className="text-sm font-medium">Full Name</Label>
                 <div className="grid grid-cols-1 gap-2">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-first_name">First Name *</Label>
+                    <Label htmlFor="edit-first_name">First Name</Label>
                     <Input
                       id="edit-first_name"
                       type="text"
                       value={editFormData.first_name}
                       onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
                       placeholder="First name"
-                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -505,14 +644,13 @@ const Users = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-last_name">Last Name *</Label>
+                    <Label htmlFor="edit-last_name">Last Name</Label>
                     <Input
                       id="edit-last_name"
                       type="text"
                       value={editFormData.last_name}
                       onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
                       placeholder="Last name"
-                      required
                     />
                   </div>
                 </div>
@@ -526,7 +664,6 @@ const Users = () => {
                   placeholder="1234-5678"
                   pattern="\d{4}-\d{4}"
                   maxLength={9}
-                  required
                 />
                 <p className="text-xs text-muted-foreground">Format: xxxx-xxxx (e.g., 1234-5678)</p>
               </div>

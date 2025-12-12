@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, Eye } from "lucide-react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import NavHeader from "@/components/NavHeader";
 import NotificationProfile from "@/components/NotificationProfile";
@@ -13,6 +14,8 @@ const BorrowRequests = () => {
   const navigate = useNavigate();
   const [borrowRequests, setBorrowRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
   
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
@@ -206,6 +209,7 @@ const BorrowRequests = () => {
                 <TableHead>Quantity</TableHead>
                 <TableHead>Request Date</TableHead>
                 <TableHead>Expected Return</TableHead>
+                <TableHead>Message</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -213,11 +217,11 @@ const BorrowRequests = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={9} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : borrowRequests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground">
                     No borrow requests found.
                   </TableCell>
                 </TableRow>
@@ -230,6 +234,11 @@ const BorrowRequests = () => {
                     <TableCell>{request.quantity}</TableCell>
                     <TableCell>{new Date(request.request_date).toLocaleDateString()}</TableCell>
                     <TableCell>{request.return_date ? new Date(request.return_date).toLocaleDateString() : "N/A"}</TableCell>
+                    <TableCell>
+                      <div className="max-w-xs truncate" title={request.message || 'No message provided'}>
+                        {request.message || 'No message'}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {request.status === "pending" && (
                         <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
@@ -248,6 +257,17 @@ const BorrowRequests = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setViewModalOpen(true);
+                        }}
+                        title="View details"
+                      >
+                        <Eye className="w-4 h-4 text-blue-600" />
+                      </Button>
                       {request.status === "pending" && (
                         <>
                           <Button
@@ -283,6 +303,130 @@ const BorrowRequests = () => {
             </TableBody>
           </Table>
         </div>
+        
+        {/* View Details Modal */}
+        <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Borrow Request Details</DialogTitle>
+            </DialogHeader>
+            {selectedRequest && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground">Borrower Information</h4>
+                    <div className="mt-2 space-y-1">
+                      <p><span className="font-medium">Name:</span> {selectedRequest.borrower_name}</p>
+                      <p><span className="font-medium">Email:</span> {selectedRequest.borrower_email}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground">Request Status</h4>
+                    <div className="mt-2">
+                      {selectedRequest.status === "pending" && (
+                        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
+                          Pending Approval
+                        </Badge>
+                      )}
+                      {selectedRequest.status === "approved" && (
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                          Approved
+                        </Badge>
+                      )}
+                      {selectedRequest.status === "rejected" && (
+                        <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+                          Rejected
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground">Item Details</h4>
+                  <div className="mt-2 grid grid-cols-3 gap-4">
+                    <div>
+                      <p><span className="font-medium">Item:</span> {selectedRequest.item}</p>
+                    </div>
+                    <div>
+                      <p><span className="font-medium">Quantity:</span> {selectedRequest.quantity}</p>
+                    </div>
+                    <div>
+                      <p><span className="font-medium">Request Date:</span> {new Date(selectedRequest.request_date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {selectedRequest.return_date && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground">Expected Return</h4>
+                    <p className="mt-1">{new Date(selectedRequest.return_date).toLocaleDateString()}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground">Purpose / Message</h4>
+                  <div className="mt-2 p-3 bg-muted rounded-lg">
+                    <p className="whitespace-pre-wrap">
+                      {selectedRequest.message || 'No message provided'}
+                    </p>
+                  </div>
+                </div>
+                
+                {selectedRequest.rejection_reason && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground">Rejection Reason</h4>
+                    <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-red-800">{selectedRequest.rejection_reason}</p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex justify-between pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    <p>Request ID: {selectedRequest.id}</p>
+                    <p>Created: {selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString() : 'N/A'}</p>
+                  </div>
+                  <div className="space-x-2">
+                    {selectedRequest.status === "pending" && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            handleApproveRequest(selectedRequest.id);
+                            setViewModalOpen(false);
+                          }}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => {
+                            handleRejectRequest(selectedRequest.id);
+                            setViewModalOpen(false);
+                          }}
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setViewModalOpen(false)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

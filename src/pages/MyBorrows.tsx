@@ -16,8 +16,8 @@ interface BorrowRecord {
   item: string;
   quantity: number;
   borrow_date: string;
-  return_date: string;
-  status: "Borrowed" | "Returned";
+  return_date: string | null;
+  status: "borrowed" | "returned";
 }
 
 const MyBorrows = () => {
@@ -66,33 +66,6 @@ const MyBorrows = () => {
       toast.error(error.message || "Failed to fetch your borrow records");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleReturn = async (id: string) => {
-    if (!confirm("Are you sure you want to mark this item as returned?")) return;
-
-    try {
-      const response = await fetch(`http://localhost/labmate-guardian-main/api/borrow_items.php?id=${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: "Returned",
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || "Failed to update status");
-      }
-
-      toast.success("Item marked as returned");
-      fetchMyRecords();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update status");
     }
   };
 
@@ -164,7 +137,7 @@ const MyBorrows = () => {
             
             return (
               <Card key={record.id} className={`hover:shadow-lg transition-shadow ${
-                overdue && record.status === "Borrowed" ? "border-red-200 bg-red-50/50" : ""
+                overdue && record.status === "borrowed" ? "border-red-200 bg-red-50/50" : ""
               }`}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -176,17 +149,17 @@ const MyBorrows = () => {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <Badge 
-                        variant={record.status === "Returned" ? "outline" : "secondary"}
+                        variant={record.status === "returned" ? "outline" : "secondary"}
                         className={`${
-                          record.status === "Returned" 
+                          record.status === "returned" 
                             ? "bg-green-100 text-green-800 border-green-200" 
                             : overdue 
                               ? "bg-red-100 text-red-800 border-red-200"
                               : "bg-yellow-100 text-yellow-800 border-yellow-200"
                         }`}
                       >
-                        {record.status}
-                        {record.status === "Borrowed" && overdue && " (Overdue)"}
+                        {record.status === "returned" ? "Returned" : "Borrowed"}
+                        {record.status === "borrowed" && overdue && " (Overdue)"}
                       </Badge>
                     </div>
                   </div>
@@ -206,8 +179,8 @@ const MyBorrows = () => {
                       <Calendar className="w-4 h-4 text-muted-foreground" />
                       <div>
                         <span className="font-medium">Due Date:</span>
-                        <p className={`text-muted-foreground ${
-                          overdue && record.status === "Borrowed" ? "text-red-600 font-medium" : ""
+                    <p className={`text-muted-foreground ${
+                          overdue && record.status === "borrowed" ? "text-red-600 font-medium" : ""
                         }`}>
                           {record.return_date 
                             ? new Date(record.return_date).toLocaleDateString()
@@ -216,7 +189,7 @@ const MyBorrows = () => {
                         </p>
                       </div>
                     </div>
-                    {record.status === "Borrowed" && daysLeft !== null && record.return_date && (
+                    {record.status === "borrowed" && daysLeft !== null && record.return_date && (
                       <div>
                         <span className="font-medium">Time Left:</span>
                         <p className={`${
@@ -234,17 +207,6 @@ const MyBorrows = () => {
                     )}
                   </div>
                 </CardContent>
-                {record.status === "Borrowed" && (
-                  <CardFooter>
-                    <Button 
-                      onClick={() => handleReturn(record.id)}
-                      className="w-full"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Mark as Returned
-                    </Button>
-                  </CardFooter>
-                )}
               </Card>
             );
           })

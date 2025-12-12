@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,10 @@ const BorrowItems = () => {
   const [inventoryLoading, setInventoryLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnItem, setReturnItem] = useState<any>(null);
+  const [returnCondition, setReturnCondition] = useState<string>("good");
+  const [returnNotes, setReturnNotes] = useState<string>("");
   
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
@@ -50,6 +55,7 @@ const BorrowItems = () => {
     borrower_email: "",
     quantity: "1",
     return_date: "",
+    message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -103,14 +109,27 @@ const BorrowItems = () => {
     }
   };
 
-  const handleReturn = async (id: string) => {
+  const openReturnModal = (item: any) => {
+    setReturnItem(item);
+    setReturnCondition("good");
+    setReturnNotes("");
+    setReturnModalOpen(true);
+  };
+
+  const handleConfirmReturn = async () => {
+    if (!returnItem) return;
     try {
-      const response = await fetch(`http://localhost/labmate-guardian-main/api/borrow_items.php?id=${id}`, {
+      const response = await fetch(`http://localhost/labmate-guardian-main/api/borrow_items.php?id=${returnItem.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: "returned" }),
+        body: JSON.stringify({ 
+          status: "returned",
+          return_condition: returnCondition,
+          return_notes: returnNotes,
+          admin_id: currentUser?.id
+        }),
       });
 
       const result = await response.json();
@@ -118,10 +137,12 @@ const BorrowItems = () => {
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Failed to update status");
       }
-      toast.success("Item marked as returned");
+      toast.success(result.message || "Item returned successfully");
+      setReturnModalOpen(false);
+      setReturnItem(null);
       fetchItems();
     } catch (error: any) {
-      toast.error("Failed to update status");
+      toast.error(error.message || "Failed to update status");
     }
   };
 
@@ -138,6 +159,7 @@ const BorrowItems = () => {
       borrower_email: currentUser?.email || "",
       quantity: "1",
       return_date: "",
+      message: "",
     });
     setBorrowModalOpen(true);
   };
@@ -160,6 +182,7 @@ const BorrowItems = () => {
           quantity: parseInt(borrowFormData.quantity),
           request_date: new Date().toISOString().split('T')[0],
           return_date: borrowFormData.return_date || "",
+          message: borrowFormData.message,
           status: "pending",
           created_by: currentUser?.id,
         }),
@@ -274,7 +297,7 @@ const BorrowItems = () => {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleReturn(item.id)}
+                              onClick={() => openReturnModal(item)}
                               title="Mark as returned"
                             >
                               <CheckCircle className="w-4 h-4 text-green-600" />
@@ -501,11 +524,51 @@ const BorrowItems = () => {
                 )}
               </div>
             </div>
-          </>
-        )}
+        </>
+      )}
 
-        {/* Borrow Modal */}
-        <Dialog open={borrowModalOpen} onOpenChange={setBorrowModalOpen}>
+      {/* Return Modal */}
+      <Dialog open={returnModalOpen} onOpenChange={setReturnModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mark Item as Returned</DialogTitle>
+          </DialogHeader>
+          {returnItem && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg">
+                <h4 className="font-medium">{returnItem.item}</h4>
+                <p className="text-sm text-muted-foreground">Borrower: {returnItem.borrower_name}</p>
+                <p className="text-sm text-muted-foreground">Quantity: {returnItem.quantity}</p>
+                <p className="text-sm text-muted-foreground">Borrowed: {new Date(returnItem.borrow_date).toLocaleDateString()}</p>
+                <p className="text-sm text-muted-foreground">Due Date: {returnItem.return_date ? new Date(returnItem.return_date).toLocaleDateString() : 'N/A'}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="condition">Return Condition</Label>
+                <select id="condition" className="w-full border rounded p-2" value={returnCondition} onChange={(e) => setReturnCondition(e.target.value)}>
+                  <option value="good">Good</option>
+                  <option value="damaged">Damaged</option>
+                  <option value="needs_repair">Needs Repair</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes">Condition Remarks</Label>
+                <Textarea id="notes" placeholder="Add notes about the returned item..." value={returnNotes} onChange={(e) => setReturnNotes(e.target.value)} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setReturnModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleConfirmReturn}>
+                  Confirm Return
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Borrow Modal */}
+      <Dialog open={borrowModalOpen} onOpenChange={setBorrowModalOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Borrow Equipment</DialogTitle>
@@ -541,6 +604,21 @@ const BorrowItems = () => {
                       onChange={(e) => setBorrowFormData({ ...borrowFormData, return_date: e.target.value })}
                       min={new Date().toISOString().split('T')[0]}
                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Purpose / Message *</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Please describe the purpose of borrowing this item..."
+                      value={borrowFormData.message}
+                      onChange={(e) => setBorrowFormData({ ...borrowFormData, message: e.target.value })}
+                      rows={3}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Provide details about why you need this equipment and how you plan to use it.
+                    </p>
                   </div>
                   
                   <div className="flex justify-end gap-2 pt-2">
